@@ -10,20 +10,20 @@
 	owner.login = function(loginInfo, callback) {
 		callback = callback || $.noop;
 		loginInfo = loginInfo || {};
-		loginInfo.account = loginInfo.account || '';
+		loginInfo.mobile = loginInfo.mobile || '';
 		loginInfo.password = loginInfo.password || '';
-		if (loginInfo.account.length < 5) {
-			return callback('账号最短为 5 个字符');
+		if (loginInfo.mobile.length < 11) {
+			return callback('账号最短为 11 个字符');
 		}
 		if (loginInfo.password.length < 6) {
 			return callback('密码最短为 6 个字符');
 		}
 		var users = JSON.parse(localStorage.getItem('$users') || '[]');
 		var authed = users.some(function(user) {
-			return loginInfo.account == user.account && loginInfo.password == user.password;
+			return loginInfo.mobile == user.mobile && loginInfo.password == user.password;
 		});
 		if (authed) {
-			return owner.createState(loginInfo.account, callback);
+			return owner.createState(loginInfo.mobile, callback);
 		} else {
 			return callback('用户名或密码错误');
 		}
@@ -43,17 +43,15 @@
 	owner.reg = function(regInfo, callback) {
 		callback = callback || $.noop;
 		regInfo = regInfo || {};
-		regInfo.account = regInfo.account || '';
+		regInfo.mobile = regInfo.mobile || '';
 		regInfo.password = regInfo.password || '';
-		if (regInfo.account.length < 5) {
-			return callback('用户名最短需要 5 个字符');
+		if (regInfo.mobile.length < 11) {
+			return callback('手机号最短需要 11 个字符');
 		}
 		if (regInfo.password.length < 6) {
 			return callback('密码最短需要 6 个字符');
 		}
-		if (!checkEmail(regInfo.email)) {
-			return callback('邮箱地址不合法');
-		}
+		
 		var users = JSON.parse(localStorage.getItem('$users') || '[]');
 		users.push(regInfo);
 		localStorage.setItem('$users', JSON.stringify(users));
@@ -79,7 +77,7 @@
 		//owner.setSettings(settings);
 	};
 
-	var checkEmail = function(email) {
+	var check = function(email) {
 		email = email || '';
 		return (email.length > 3 && email.indexOf('@') > -1);
 	};
@@ -87,12 +85,12 @@
 	/**
 	 * 找回密码
 	 **/
-	owner.forgetPassword = function(email, callback) {
+	owner.forgetPassword = function(mobile, callback) {
 		callback = callback || $.noop;
-		if (!checkEmail(email)) {
-			return callback('邮箱地址不合法');
+		if (mobile.length < 11) {
+			return callback('手机号最短需要 11 个字符');
 		}
-		return callback(null, '新的随机密码已经发送到您的邮箱，请查收邮件。');
+		return callback(null, '新的随机密码已经发送到您的手机，请查收短信。');
 	};
 
 	/**
