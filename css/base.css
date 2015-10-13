@@ -122,6 +122,14 @@ body {
 .mui-table-view-divider:after {
 	height: 0;
 }
+.mui-content{
+	z-index: -1;
+}
+.main.mui-content{
+	position: absolute;
+	height: 100%;
+	overflow: hidden;
+}
 .mui-content-padded {
 	margin: 10px 0px;
 }
@@ -129,3 +137,41 @@ body {
 	margin: 35px auto;
 	display: none;
 }
+header .mui-btn-link i{
+	line-height: 44px;
+}
+.mui-bar-bottom{
+	position: fixed;
+	z-index: 10;
+	right: 0;
+	left: 0;
+	height: 50px;
+	padding-right: 10px;
+	padding-left: 10px;
+	border-bottom: 0;
+	background-color: #f7f7f7;
+	-webkit-box-shadow: 0 0 1px rgba(0,0,0,.85);
+	box-shadow: 0 0 1px rgba(0,0,0,.85);
+	-webkit-backface-visibility: hidden;
+	backface-visibility: hidden
+}
+.mui-bar-nav-bottom .mui-btn-link{
+	padding-bottom: 3px;
+}
+.mui-bar-nav-bottom{
+	bottom: 0px;
+	box-shadow: 0 -1px 6px #ccc
+}
+.mui-bar-nav-bottom i{
+	line-height: 20px;
+}
+.mui-btn-link.mui-btn-bottom{
+	width: 23.5%;
+}
+.mui-bar-nav-bottom label{
+	font-size: 12px;
+}
+.mui-slider{
+	height: 100%;
+}
+
