@@ -135,7 +135,7 @@ body {
 	margin: 35px auto;
 	display: none;
 }
-header .mui-btn-link i{
+.mui-bar .mui-btn-link i{
 	line-height: 44px;
 }
 
@@ -189,4 +189,41 @@ footer .mui-bar{
 }
 .main .container{
 	padding-top: 25px;
+}
+.mui-bar-tab .tab-item {
+	display: table-cell;
+	overflow: hidden;
+	width: 1%;
+	height: 50px;
+	text-align: center;
+	vertical-align: middle;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	color: #929292
+}
+
+.mui-bar-tab .tab-item.active {
+	color: #007aff
+}
+
+.mui-bar-tab .tab-item .mui-icon {
+	top: 3px;
+	width: 24px;
+	height: 24px;
+	padding-top: 0;
+	padding-bottom: 0
+}
+
+.mui-bar-tab .tab-item .mui-icon~.mui-tab-label {
+	font-size: 11px;
+	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis
+}
+
+.mui-bar-tab .tab-item .mui-icon:active {
+	background: 0 0
+}
+.mui-content-padded p{
+	padding: 0px 15px;
 }

@@ -5,7 +5,7 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
 		<title></title>
-		<link href="css/mui.min.css" rel="stylesheet" />
+		<link rel="stylesheet" href="css/mui.min.css" />
 		<link rel="stylesheet" href="css/font-awesome.min.css" />
 		<link rel="stylesheet" href="css/bootstrap.min.css" />
 		<link rel="stylesheet" href="css/base.css" />
@@ -13,37 +13,136 @@
 		<script src="js/mui.min.js"></script>
 		<script src="js/app.js"></script>
 		<script>
+			//取消浏览器的所有事件，使得active的样式在手机上正常生效
+			document.addEventListener('touchstart',function(){
+			    return false;
+			},true);
+			// 禁止选择
+			document.oncontextmenu=function(){
+				return false;
+			};
+			// H5 plus事件处理
+			var as='pop-in';// 默认窗口动画
+			function plusReady(){
+				// 隐藏滚动条
+				plus.webview.currentWebview().setStyle({scrollIndicator:'none'});
+				// Android处理返回键
+				plus.key.addEventListener('backbutton',function(){
+					if(confirm('确认退出？')){
+						plus.runtime.quit();
+					}
+				},false);
+				compatibleAdjust();
+			}
+			if(window.plus){
+				plusReady();
+			}else{
+				document.addEventListener('plusready',plusReady,false);
+			}
+			// DOMContentLoaded事件处理
+			var _domReady=false;
+			document.addEventListener('DOMContentLoaded',function(){
+				_domReady=true;
+				compatibleAdjust();
+			},false);
+			// 兼容性样式调整
+			var _adjust=false;
+			function compatibleAdjust(){
+				if(_adjust||!window.plus||!_domReady){
+					return;
+				}
+				_adjust=true;
+				// iOS平台使用div的滚动条
+				if('iOS'==plus.os.name){
+					document.getElementById('content').className='scontent';
+				}
+				// 预创建二级窗口
+			//	preateWebviews();
+				// 关闭启动界面
+				setTimeout(function(){
+					plus.navigator.closeSplashscreen();
+				},500);
+			}
+			// 处理点击事件
+			var _openw=null;
+			function clicked(id,a,s){
+				if(_openw){return;}
+				a||(a=as);
+				_openw=preate[id];
+				if(_openw){
+					_openw.showded=true;
+					_openw.show(a,null,function(){
+						_openw=null;//避免快速点击打开多个页面
+					});
+				}else{
+			//		var wa=plus.nativeUI.showWaiting();
+					_openw=plus.webview.create(id,id,{scrollIndicator:'none',scalable:false,popGesture:'hide'},{preate:true});
+					preate[id]=_openw;
+					_openw.addEventListener('loaded',function(){//叶面加载完成后才显示
+			//		setTimeout(function(){//延后显示可避免低端机上动画时白屏
+			//			wa.close();
+						_openw.showded=true;
+						s||_openw.show(a,null,function(){
+							_openw=null;//避免快速点击打开多个页面
+						});
+						s&&(_openw=null);//避免s模式下变量无法重置
+			//		},10);
+					},false);
+					_openw.addEventListener('close',function(){//页面关闭后可再次打开
+						_openw=null;
+						preate[id]&&(preate[id]=null);//兼容窗口的关闭
+					},false);
+				}
+			}
+			// 预创建二级页面
+			var preate={};
+			function preateWebviews(){
+				preateWebivew('plus/webview.html');
+				var plist=document.getElementById('plist').children;
+				// 由于启动是预创建过多Webview窗口会消耗较长的时间，所以这里限制仅创建5个
+				for( var i=0;i<plist.length&&i<2;i++){
+					var id=plist[i].id;
+					id&&(id.length>0)&&preateWebivew(id);
+				}
+			}
+			function preateWebivew(id){
+				if(!preate[id]){
+					var w=plus.webview.create(id,id,{scrollIndicator:'none',scalable:false,popGesture:'hide'},{preate:true});
+					preate[id]=w;
+					w.addEventListener('close',function(){//页面关闭后可再次打开
+						_openw=null;
+						preate[id]&&(preate[id]=null);//兼容窗口的关闭
+					},false);
+				}
+			}
+			// 清除预创建页面(仅)
+			function preateClear(){
+				for(var p in preate){
+					var w=preate[p];
+					if(w&&w.showded&&!w.isVisible()){
+						w.close();
+						preate[p]=null;
+					}
+				}
+			}
+			function imgLoaded(img) {
+        var imgWrapper = img.parentNode;
+        imgWrapper.className += imgWrapper.className? ' loaded' : 'loaded';
+      }
 			(function($, doc) {
 				mui.init();
 				var settings = app.getSettings();
-//				var account = doc.getElementById('account');
-//				//
-//				window.addEventListener('show', function() {
-//					var state = app.getState();
-//					account.innerText = state.account;
-//				}, false);
+				//
+				window.addEventListener('show', function() {
+					var state = app.getState();
+				}, false);
 				mui.plusReady(function() {
 					var settingPage = $.preload({
 						"id": 'setting',
-						"url": 'setting.html'
+						"url": 'plus/setting.html'
 					});
 					//设置
-//					var settingButton = doc.getElementById('setting');
-//					//settingButton.style.display = settings.autoLogin ? 'block' : 'none';
-//					settingButton.addEventListener('tap', function(event) {
-//						$.openWindow({
-//							id: 'setting',
-//							show: {
-//								aniShow: 'pop-in'
-//							},
-//							styles: {
-//								popGesture: 'hide'
-//							},
-//							waiting: {
-//								autoShow: false
-//							}
-//						});
-//					});
+					
 					//--
 					$.oldBack = mui.back;
 					var backButtonPress = 0;
@@ -62,16 +161,11 @@
 				});
 			}(mui, document));
 		</script>
-		<script>
-			function imgLoaded(img) {
-        var imgWrapper = img.parentNode;
-        imgWrapper.className += imgWrapper.className? ' loaded' : 'loaded';
-      }
-		</script>
+
 	</head>
 
 	<body>
-		<header class="mui-bar mui-bar-nav" style="padding-right: 15px;">
+		<header class="mui-bar mui-bar-nav">
 			<h1 class="mui-title">逛商场</h1>
 			<button id='' class="mui-pull-left mui-btn-link">深圳&nbsp;<i class="fa fa-map-marker"></i></button>
 			<button id='' class="mui-pull-right mui-btn-link"><i class="fa fa-qrcode fa-2x"></i></button>
@@ -81,205 +175,172 @@
 			<div class="container">
 				<div class="row" id="post-list">
 					<div class="col-xs-12 col-md-6">
-					    <article class="post tag-ad">
-					    	<h2 class="post-title">
-					    		<a href="http://www.ghostchina.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Ghost中文网'])" target="_blank">Ghost中文网</a>
-					    	</h2>
-					        <div class="post-featured-image">
-					            <a class="thumbnail loaded" href="http://www.ghostchina.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Ghost中文网'])" target="_blank">
-					              <img src="http://static.bootcss.com/expo/img/7/b5/f9c2f01fad1f23574156e0577a06c.jpg" width="800" height="600" alt="Ghost中文网" onload="imgLoaded(this)">
-					            </a>
-					        </div>
-					    </article>
+				    <article class="post tag-ad">
+				    	<h2 class="post-title">
+				    		<a href="http://www.ghostchina.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Ghost中文网'])" target="_blank">Ghost中文网</a>
+				    	</h2>
+				        <div class="post-featured-image">
+			            <a class="thumbnail loaded" href="http://www.ghostchina.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Ghost中文网'])" target="_blank">
+			              <img src="http://static.bootcss.com/expo/img/7/b5/f9c2f01fad1f23574156e0577a06c.jpg" width="800" height="600" alt="Ghost中文网" onload="imgLoaded(this)">
+			            </a>
+				        </div>
+				    </article>
 					</div>
 					<div class="col-xs-12 col-md-6">
-					    <article class="post tag-ad">
-					    	<h2 class="post-title">
-					    		<a href="http://www.liepin.com/event/landingpage/it_rd.shtml?mscid=b_o_0003" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', '猎聘网'])" target="_blank">猎聘网</a>
-					    	</h2>
-					        <div class="post-featured-image">
-					            <a class="thumbnail loaded" href="http://www.liepin.com/event/landingpage/it_rd.shtml?mscid=b_o_0003" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', '猎聘网'])" target="_blank">
-					              <img src="http://static.bootcss.com/expo/img/e/93/06ce7866570d459fc6132b823d9f2.png" width="800" height="600" alt="猎聘网" onload="imgLoaded(this)">
-					            </a>
-					        </div>
-					    </article>
+				    <article class="post tag-ad">
+				    	<h2 class="post-title">
+				    		<a href="http://www.liepin.com/event/landingpage/it_rd.shtml?mscid=b_o_0003" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', '猎聘网'])" target="_blank">猎聘网</a>
+				    	</h2>
+			        <div class="post-featured-image">
+		            <a class="thumbnail loaded" href="http://www.liepin.com/event/landingpage/it_rd.shtml?mscid=b_o_0003" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', '猎聘网'])" target="_blank">
+		              <img src="http://static.bootcss.com/expo/img/e/93/06ce7866570d459fc6132b823d9f2.png" width="800" height="600" alt="猎聘网" onload="imgLoaded(this)">
+		            </a>
+			        </div>
+				    </article>
 					</div>
-					
-					
-					            <div class="col-xs-12 col-sm-6">
-					                <article class="post tag-foreign-website tag-bootstrap-v3">
-					                    <h2 class="post-title">
-					                        <a href="https://www.symphony.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Symphony'])" target="_blank">Symphony</a>
-					                    </h2>
-					                    <div class="post-featured-image">
-					                        <a class="thumbnail loaded" href="https://www.symphony.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Symphony'])" target="_blank">
-					                          <img src="http://image.youzhan.org/0/56/aae95f872eea53bffaae007069b0d.png!thumb" width="700" height="438" alt="Symphony" onload="imgLoaded(this)">
-					                        </a>
-					                    </div>
-					                    
-					                </article>
-					            </div>
-					
-					
-					            <div class="col-xs-12 col-sm-6">
-					                <article class="post tag-foreign-website tag-bootstrap-v3">
-					                    <h2 class="post-title">
-					                        <a href="https://twitninja.co/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Twit Ninja'])" target="_blank">Twit Ninja</a>
-					                    </h2>
-					                    <div class="post-featured-image">
-					                        <a class="thumbnail loaded" href="https://twitninja.co/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Twit Ninja'])" target="_blank">
-					                          <img src="http://image.youzhan.org/f/c7/1f708b0b3b3ca571bd6e47f6a3235.png!thumb" width="700" height="438" alt="Twit Ninja" onload="imgLoaded(this)">
-					                        </a>
-					                    </div>
-					                    
-					                </article>
-					            </div>
-					
-					
-					            <div class="col-xs-12 col-sm-6">
-					                <article class="post tag-foreign-website tag-bootstrap-v3">
-					                    <h2 class="post-title">
-					                        <a href="https://www.agendrix.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Agendrix'])" target="_blank">Agendrix</a>
-					                    </h2>
-					                    <div class="post-featured-image">
-					                        <a class="thumbnail loaded" href="https://www.agendrix.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Agendrix'])" target="_blank">
-					                          <img src="http://image.youzhan.org/1/43/c20c0e2c9d4cb35a15dd2de180f1a.png!thumb" width="700" height="438" alt="Agendrix" onload="imgLoaded(this)">
-					                        </a>
-					                    </div>
-					                    
-					                </article>
-					            </div>
-					
-					
-					            <div class="col-xs-12 col-sm-6">
-					                <article class="post tag-foreign-website tag-bootstrap-v3">
-					                    <h2 class="post-title">
-					                        <a href="http://inviteup.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'InviteUp'])" target="_blank">InviteUp</a>
-					                    </h2>
-					                    <div class="post-featured-image">
-					                        <a class="thumbnail loaded" href="http://inviteup.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'InviteUp'])" target="_blank">
-					                          <img src="http://image.youzhan.org/0/d9/121802977d4142074048ff038ceeb.png!thumb" width="700" height="438" alt="InviteUp" onload="imgLoaded(this)">
-					                        </a>
-					                    </div>
-					                    
-					                </article>
-					            </div>
-					
-					
-					            <div class="col-xs-12 col-sm-6">
-					                <article class="post tag-foreign-website tag-bootstrap-v3">
-					                    <h2 class="post-title">
-					                        <a href="http://collegefundr.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'CollegeFundr'])" target="_blank">CollegeFundr</a>
-					                    </h2>
-					                    <div class="post-featured-image">
-					                        <a class="thumbnail loaded" href="http://collegefundr.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'CollegeFundr'])" target="_blank">
-					                          <img src="http://image.youzhan.org/f/ef/2667f7c7f2b6f90ec2d25741b2ab9.png!thumb" width="700" height="438" alt="CollegeFundr" onload="imgLoaded(this)">
-					                        </a>
-					                    </div>
-					                    
-					                </article>
-					            </div>
-					
-					
-					            <div class="col-xs-12 col-sm-6">
-					                <article class="post tag-foreign-website tag-bootstrap-v3">
-					                    <h2 class="post-title">
-					                        <a href="http://www.monkop.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Monkop'])" target="_blank">Monkop</a>
-					                    </h2>
-					                    <div class="post-featured-image">
-					                        <a class="thumbnail loaded" href="http://www.monkop.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Monkop'])" target="_blank">
-					                          <img src="http://image.youzhan.org/6/d3/b98209ec19cde954cb528432e3632.png!thumb" width="700" height="438" alt="Monkop" onload="imgLoaded(this)">
-					                        </a>
-					                    </div>
-					                    
-					                </article>
-					            </div>
-					
-					
-					            <div class="col-xs-12 col-sm-6">
-					                <article class="post tag-foreign-website tag-bootstrap-v3">
-					                    <h2 class="post-title">
-					                        <a href="http://www.getfirp.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Firp'])" target="_blank">Firp</a>
-					                    </h2>
-					                    <div class="post-featured-image">
-					                        <a class="thumbnail loaded" href="http://www.getfirp.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Firp'])" target="_blank">
-					                          <img src="http://image.youzhan.org/e/c6/69f908975e46aaf78f20d00b52eb8.png!thumb" width="700" height="438" alt="Firp" onload="imgLoaded(this)">
-					                        </a>
-					                    </div>
-					                    
-					                </article>
-					            </div>
-					
-					
-					            <div class="col-xs-12 col-sm-6">
-					                <article class="post tag-foreign-website tag-bootstrap-v3">
-					                    <h2 class="post-title">
-					                        <a href="https://www.wiplo.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Wiplo'])" target="_blank">Wiplo</a>
-					                    </h2>
-					                    <div class="post-featured-image">
-					                        <a class="thumbnail loaded" href="https://www.wiplo.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Wiplo'])" target="_blank">
-					                          <img src="http://image.youzhan.org/9/1c/12010eaea069ccd7376ffcd3cd4b1.png!thumb" width="700" height="438" alt="Wiplo" onload="imgLoaded(this)">
-					                        </a>
-					                    </div>
-					                    
-					                </article>
-					            </div>
-					
-					
-					            <div class="col-xs-12 col-sm-6">
-					                <article class="post tag-foreign-website tag-bootstrap-v3">
-					                    <h2 class="post-title">
-					                        <a href="/rogue-wave/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Rogue Wave'])" target="_blank">Rogue Wave</a>
-					                    </h2>
-					                    <div class="post-featured-image">
-					                        <a class="thumbnail loaded" href="/rogue-wave/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Rogue Wave'])" target="_blank">
-					                          <img src="http://image.youzhan.org/d/cf/bd98373e8a93fa58b09b5df671ad0.png!thumb" width="700" height="438" alt="Rogue Wave" onload="imgLoaded(this)">
-					                        </a>
-					                    </div>
-					                    
-					                </article>
-					            </div>
-					
-					
-					            <div class="col-xs-12 col-sm-6">
-					                <article class="post tag-foreign-website tag-bootstrap-v3">
-					                    <h2 class="post-title">
-					                        <a href="http://newco.co/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'NewCo'])" target="_blank">NewCo</a>
-					                    </h2>
-					                    <div class="post-featured-image">
-					                        <a class="thumbnail loaded" href="http://newco.co/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'NewCo'])" target="_blank">
-					                          <img src="http://image.youzhan.org/a/9f/6cfbfcf3773072564041c168d7953.png!thumb" width="700" height="438" alt="NewCo" onload="imgLoaded(this)">
-					                        </a>
-					                    </div>
-					                    
-					                </article>
-					            </div>
-					
-					
-					        
+          <div class="col-xs-12 col-sm-6">
+            <article class="post tag-foreign-website tag-bootstrap-v3">
+              <h2 class="post-title">
+                  <a href="https://www.symphony.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Symphony'])" target="_blank">Symphony</a>
+              </h2>
+              <div class="post-featured-image">
+                <a class="thumbnail loaded" href="https://www.symphony.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Symphony'])" target="_blank">
+                  <img src="http://image.youzhan.org/0/56/aae95f872eea53bffaae007069b0d.png!thumb" width="700" height="438" alt="Symphony" onload="imgLoaded(this)">
+                </a>
+              </div>
+            </article>
+          </div>
+          <div class="col-xs-12 col-sm-6">
+            <article class="post tag-foreign-website tag-bootstrap-v3">
+              <h2 class="post-title">
+                <a href="https://twitninja.co/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Twit Ninja'])" target="_blank">Twit Ninja</a>
+              </h2>
+              <div class="post-featured-image">
+                <a class="thumbnail loaded" href="https://twitninja.co/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Twit Ninja'])" target="_blank">
+                  <img src="http://image.youzhan.org/f/c7/1f708b0b3b3ca571bd6e47f6a3235.png!thumb" width="700" height="438" alt="Twit Ninja" onload="imgLoaded(this)">
+                </a>
+              </div>
+            </article>
+          </div>
+          <div class="col-xs-12 col-sm-6">
+            <article class="post tag-foreign-website tag-bootstrap-v3">
+              <h2 class="post-title">
+                <a href="https://www.agendrix.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Agendrix'])" target="_blank">Agendrix</a>
+              </h2>
+              <div class="post-featured-image">
+                <a class="thumbnail loaded" href="https://www.agendrix.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Agendrix'])" target="_blank">
+                  <img src="http://image.youzhan.org/1/43/c20c0e2c9d4cb35a15dd2de180f1a.png!thumb" width="700" height="438" alt="Agendrix" onload="imgLoaded(this)">
+                </a>
+              </div>
+            </article>
+          </div>
+          <div class="col-xs-12 col-sm-6">
+            <article class="post tag-foreign-website tag-bootstrap-v3">
+              <h2 class="post-title">
+                <a href="http://inviteup.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'InviteUp'])" target="_blank">InviteUp</a>
+              </h2>
+              <div class="post-featured-image">
+                <a class="thumbnail loaded" href="http://inviteup.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'InviteUp'])" target="_blank">
+                  <img src="http://image.youzhan.org/0/d9/121802977d4142074048ff038ceeb.png!thumb" width="700" height="438" alt="InviteUp" onload="imgLoaded(this)">
+                </a>
+              </div>
+            </article>
+          </div>
+          <div class="col-xs-12 col-sm-6">
+            <article class="post tag-foreign-website tag-bootstrap-v3">
+              <h2 class="post-title">
+                <a href="http://collegefundr.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'CollegeFundr'])" target="_blank">CollegeFundr</a>
+              </h2>
+              <div class="post-featured-image">
+                <a class="thumbnail loaded" href="http://collegefundr.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'CollegeFundr'])" target="_blank">
+                  <img src="http://image.youzhan.org/f/ef/2667f7c7f2b6f90ec2d25741b2ab9.png!thumb" width="700" height="438" alt="CollegeFundr" onload="imgLoaded(this)">
+                </a>
+              </div>
+            </article>
+          </div>
+          <div class="col-xs-12 col-sm-6">
+            <article class="post tag-foreign-website tag-bootstrap-v3">
+              <h2 class="post-title">
+                <a href="http://www.monkop.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Monkop'])" target="_blank">Monkop</a>
+              </h2>
+              <div class="post-featured-image">
+                <a class="thumbnail loaded" href="http://www.monkop.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Monkop'])" target="_blank">
+                  <img src="http://image.youzhan.org/6/d3/b98209ec19cde954cb528432e3632.png!thumb" width="700" height="438" alt="Monkop" onload="imgLoaded(this)">
+                </a>
+              </div>
+            </article>
+          </div>
+          <div class="col-xs-12 col-sm-6">
+            <article class="post tag-foreign-website tag-bootstrap-v3">
+              <h2 class="post-title">
+                <a href="http://www.getfirp.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Firp'])" target="_blank">Firp</a>
+              </h2>
+              <div class="post-featured-image">
+                <a class="thumbnail loaded" href="http://www.getfirp.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Firp'])" target="_blank">
+                  <img src="http://image.youzhan.org/e/c6/69f908975e46aaf78f20d00b52eb8.png!thumb" width="700" height="438" alt="Firp" onload="imgLoaded(this)">
+                </a>
+              </div>
+            </article>
+          </div>
+          <div class="col-xs-12 col-sm-6">
+            <article class="post tag-foreign-website tag-bootstrap-v3">
+              <h2 class="post-title">
+                <a href="https://www.wiplo.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Wiplo'])" target="_blank">Wiplo</a>
+              </h2>
+              <div class="post-featured-image">
+                <a class="thumbnail loaded" href="https://www.wiplo.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Wiplo'])" target="_blank">
+                  <img src="http://image.youzhan.org/9/1c/12010eaea069ccd7376ffcd3cd4b1.png!thumb" width="700" height="438" alt="Wiplo" onload="imgLoaded(this)">
+                </a>
+              </div>
+            </article>
+          </div>
+          <div class="col-xs-12 col-sm-6">
+            <article class="post tag-foreign-website tag-bootstrap-v3">
+              <h2 class="post-title">
+                <a href="/rogue-wave/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Rogue Wave'])" target="_blank">Rogue Wave</a>
+              </h2>
+              <div class="post-featured-image">
+                <a class="thumbnail loaded" href="/rogue-wave/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Rogue Wave'])" target="_blank">
+                  <img src="http://image.youzhan.org/d/cf/bd98373e8a93fa58b09b5df671ad0.png!thumb" width="700" height="438" alt="Rogue Wave" onload="imgLoaded(this)">
+                </a>
+            	</div>
+            </article>
+          </div>
+          <div class="col-xs-12 col-sm-6">
+            <article class="post tag-foreign-website tag-bootstrap-v3">
+              <h2 class="post-title">
+                <a href="http://newco.co/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'NewCo'])" target="_blank">NewCo</a>
+              </h2>
+                <div class="post-featured-image">
+                  <a class="thumbnail loaded" href="http://newco.co/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'NewCo'])" target="_blank">
+                    <img src="http://image.youzhan.org/a/9f/6cfbfcf3773072564041c168d7953.png!thumb" width="700" height="438" alt="NewCo" onload="imgLoaded(this)">
+                  </a>
+                </div>
+            </article>
+          </div>
 					<div class="col-xs-12 col-md-6">
-					    <article class="post tag-ad">
-					    	<h2 class="post-title">
-					    		<a href="http://www.golaravel.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Laravel中文网'])" target="_blank">Laravel中文网</a>
-					    	</h2>
-					        <div class="post-featured-image">
-					            <a class="thumbnail loaded" href="http://www.golaravel.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Laravel中文网'])" target="_blank">
-					              <img src="http://static.bootcss.com/expo/img/8/01/3069bcd2889acfe435c32005be151.jpg" width="800" height="600" alt="Laravel中文网" onload="imgLoaded(this)">
-					            </a>
-					        </div>
-					    </article>
+				    <article class="post tag-ad">
+				    	<h2 class="post-title">
+				    		<a href="http://www.golaravel.com/" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Laravel中文网'])" target="_blank">Laravel中文网</a>
+				    	</h2>
+			        <div class="post-featured-image">
+		            <a class="thumbnail loaded" href="http://www.golaravel.com/" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Laravel中文网'])" target="_blank">
+		              <img src="http://static.bootcss.com/expo/img/8/01/3069bcd2889acfe435c32005be151.jpg" width="800" height="600" alt="Laravel中文网" onload="imgLoaded(this)">
+		            </a>
+			        </div>
+				    </article>
 					</div>
 					<div class="col-xs-12 col-md-6">
-					    <article class="post tag-ad">
-					    	<h2 class="post-title">
-					    		<a href="http://www.liepin.com/event/bootstrap/index.shtml?mscid=b_o_0001" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Bootstrap求职招聘'])" target="_blank">Bootstrap求职招聘</a>
-					    	</h2>
-					        <div class="post-featured-image">
-					            <a class="thumbnail loaded" href="http://www.liepin.com/event/bootstrap/index.shtml?mscid=b_o_0001" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Bootstrap求职招聘'])" target="_blank">
-					              <img src="http://static.bootcss.com/expo/img/1/fe/f36d7232d5e063f2de4f144c6749a.png" width="800" height="600" alt="Bootstrap求职招聘" onload="imgLoaded(this)">
-					            </a>
-					        </div>
-					    </article>
+				    <article class="post tag-ad">
+				    	<h2 class="post-title">
+				    		<a href="http://www.liepin.com/event/bootstrap/index.shtml?mscid=b_o_0001" onclick="_hmt.push(['_trackEvent', 'titlelink', 'click', 'Bootstrap求职招聘'])" target="_blank">Bootstrap求职招聘</a>
+				    	</h2>
+			        <div class="post-featured-image">
+		            <a class="thumbnail loaded" href="http://www.liepin.com/event/bootstrap/index.shtml?mscid=b_o_0001" onclick="_hmt.push(['_trackEvent', 'imagelink', 'click', 'Bootstrap求职招聘'])" target="_blank">
+		              <img src="http://static.bootcss.com/expo/img/1/fe/f36d7232d5e063f2de4f144c6749a.png" width="800" height="600" alt="Bootstrap求职招聘" onload="imgLoaded(this)">
+		            </a>
+			        </div>
+				    </article>
 					</div>
 					</div>
 			</div>
@@ -287,25 +348,24 @@
 		
 		<footer>
 			<nav class="mui-bar mui-bar-tab">
-			  <a class="mui-tab-item mui-active" href="#tabbar">
+			  <a class="tab-item active" href="#">
 					<span class="mui-icon fa fa-home fa-2x"></span>
 					<span class="mui-tab-label">首页</span>
 				</a>
-				<a class="mui-tab-item" href="#tabbar-with-chat">
+				<a class="tab-item" href="plus/walk.html">
 					<span class="mui-icon fa fa-rocket fa-2x"></span>
 					<span class="mui-tab-label">走街串巷</span>
 				</a>
-				<a class="mui-tab-item" href="#tabbar-with-sms">
+				<a class="tab-item" href="plus/coupons.html">
 					<span class="mui-icon fa fa-credit-card fa-2x"></span>
 					<span class="mui-tab-label">优惠券</span>
 				</a>
-				<a class="mui-tab-item" href="#tabbar-with-map">
+				<a class="tab-item" href="plus/setting.html">
 					<span class="mui-icon fa fa-user fa-2x"></span>
 					<span class="mui-tab-label">我的</span>
 				</a>
 			</nav>
 		</footer>
-		
 	</body>
 
 </html>
